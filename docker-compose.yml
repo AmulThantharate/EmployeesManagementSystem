@@ -3,6 +3,7 @@ version: '3.8'
 services:
   web:
     build: .
+    image: employees-management-system:latest
     ports:
       - "8080:8080"
     environment:
