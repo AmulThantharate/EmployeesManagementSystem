@@ -1,0 +1,36 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+# env:
+  # DOCKER_IMAGE_NAME: employees-management-system
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Tag
+        id: meta
+        run: |
+          TAG="v${GITHUB_RUN_NUMBER}-$(echo $GITHUB_SHA | cut -c1-7)"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+  install_build_and_test:
+    name: Install, Build, and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Respository
+        uses: actions/checkout@v4
+
+      - name: Setup .Net Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      
+      - name: Install Dependecies
+        run: dotnet restore
