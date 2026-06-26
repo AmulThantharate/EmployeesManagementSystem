@@ -1,0 +1,100 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  DOCKER_IMAGE_NAME: employees-management-system
+
+jobs:
+  install-build-test:
+    name: Install, Build, and Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x' # using .NET 10 based on Dockerfile
+
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
+
+  smoketest:
+    name: Smoketest
+    needs: install-build-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Docker image for Smoketest
+      run: docker build -t ${{ env.DOCKER_IMAGE_NAME }}:smoketest .
+
+    - name: Run container
+      run: |
+        docker run -d -p 8080:8080 --name smoke-test-app ${{ env.DOCKER_IMAGE_NAME }}:smoketest
+        # Wait a few seconds for the application to start
+        sleep 10
+        
+    - name: Check endpoint (Smoketest)
+      run: |
+        # Ping the root endpoint to see if the app is responding
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || echo "000")
+        if [[ "$STATUS" -ge 200 && "$STATUS" -lt 400 ]]; then
+          echo "Smoketest passed! HTTP Status: $STATUS"
+        elif [[ "$STATUS" == "404" ]]; then
+          # 404 means the server is running but maybe no default route
+          echo "Server responded with 404, but it is running."
+        else
+          echo "Smoketest failed! HTTP Status: $STATUS"
+          echo "Container logs:"
+          docker logs smoke-test-app
+          exit 1
+        fi
+
+    - name: Cleanup
+      if: always()
+      run: docker rm -f smoke-test-app || true
+
+  docker:
+    name: Docker Build & Push
+    needs: smoketest
+    runs-on: ubuntu-latest
+    # Only push Docker image on merge to main/master
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to GitHub Container Registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}/${{ env.DOCKER_IMAGE_NAME }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
