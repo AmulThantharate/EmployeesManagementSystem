@@ -1,0 +1,124 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="card border-0 shadow-sm mb-5" style="background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%); color: white;">
+        <div class="card-body p-5 text-center text-md-start d-flex flex-column flex-md-row align-items-center justify-content-between">
+            <div>
+                <h1 class="display-5 fw-bold mb-3">Welcome to EMS Dashboard</h1>
+                <p class="lead mb-0" style="opacity: 0.9;">Manage your team, track performance, and streamline HR processes all in one place.</p>
+            </div>
+            <div class="mt-4 mt-md-0">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Employees" asp-action="Create" class="btn btn-light btn-lg px-4 shadow-sm" style="color: var(--accent); font-weight: 600;">
+                        <i class="fas fa-plus-circle me-2"></i> Add Employee
+                    </a>
+                }
+                else
+                {
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-light btn-lg px-4 shadow-sm" style="color: var(--accent); font-weight: 600;">
+                        <i class="fas fa-plus-circle me-2"></i> Add Employee
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; background-color: rgba(99, 102, 241, 0.1); color: var(--accent);">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Total Employees</h6>
+                        <h2 class="mb-0 fw-bold">1,248</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <i class="fas fa-building fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Departments</h6>
+                        <h2 class="mb-0 fw-bold">12</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="fas fa-user-plus fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">New Hires (This Month)</h6>
+                        <h2 class="mb-0 fw-bold">34</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity / Info -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                    <h5 class="fw-bold"><i class="fas fa-history me-2 text-muted"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">JS</div>
+                        <div>
+                            <p class="mb-0"><strong>John Smith</strong> was added to the Engineering department.</p>
+                            <small class="text-muted">2 hours ago</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">ED</div>
+                        <div>
+                            <p class="mb-0"><strong>Emily Davis</strong> updated her contact information.</p>
+                            <small class="text-muted">5 hours ago</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">MR</div>
+                        <div>
+                            <p class="mb-0"><strong>Michael Roberts</strong>'s leave request was approved.</p>
+                            <small class="text-muted">1 day ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                    <h5 class="fw-bold"><i class="fas fa-bolt me-2 text-muted"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body p-4 d-flex flex-column gap-3">
+                    <a href="#" class="btn btn-outline-secondary text-start p-3 rounded-3" style="transition: all 0.2s;">
+                        <i class="fas fa-file-invoice me-2"></i> Generate Payroll Report
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary text-start p-3 rounded-3" style="transition: all 0.2s;">
+                        <i class="fas fa-calendar-alt me-2"></i> View Leave Calendar
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary text-start p-3 rounded-3" style="transition: all 0.2s;">
+                        <i class="fas fa-cog me-2"></i> System Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
