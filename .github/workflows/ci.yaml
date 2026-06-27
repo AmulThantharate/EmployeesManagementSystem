@@ -92,7 +92,7 @@ jobs:
           tags: employees-management-system:local
           outputs: type=docekr,dest=/tmp/image.tar
       - name: Upload Artifact
-        uses: action/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docker-image
           path: /tmp/image.tar
