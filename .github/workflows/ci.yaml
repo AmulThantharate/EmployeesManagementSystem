@@ -90,7 +90,7 @@ jobs:
         with:
           context: .
           tags: employees-management-system:local
-          outputs: type=docekr,dest=/tmp/image.tar
+          outputs: type=docker,dest=/tmp/image.tar
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
