@@ -54,3 +54,26 @@ jobs:
           dontnet-version: "10.0.x"
       - name: Run Test
         run: dotnet  test --configuration Release --verbosity normal
+  fs_scan:
+    name: FS Scan
+    runs-on: ubuntu-latest
+    needs: unit_tests
+    permissions:
+      security-events: write
+    steps:
+      - name: Chekout Code
+        uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-fs.sarif"
+          exit-code: 0
+          severity: "HIGH,CRITICAL"
+      - name: Upload Trivy FS SARIF to GitHub Security
+        uses: github/codeql-action/upload@v4
+        with:
+          sarif_file: "trivy-fs.sarif"
+          category: "trivy-fs-scan"
