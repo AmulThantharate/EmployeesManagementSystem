@@ -28,7 +28,7 @@ jobs:
         name: Setup .Net Core
       - uses: actions/setup-dotnet@v4
         with:
-          dontnet-version: "10.0.x"
+          dotnet-version: "10.0.x"
       - name: Restore Dependencies
         run: dotnet restore
   build:
@@ -40,7 +40,7 @@ jobs:
         name: Setup .Net Core
       - uses: actions/setup-dotnet@v4
         with:
-          dontnet-version: "10.0.x"
+          dotnet-version: "10.0.x"
       - name: Build Project
         run: dotnet build --configuration Release
   unit_tests:
@@ -52,7 +52,7 @@ jobs:
         name: Setup .Net Core
       - uses: actions/setup-dotnet@v4
         with:
-          dontnet-version: "10.0.x"
+          dotnet-version: "10.0.x"
       - name: Run Test
         run: dotnet  test --configuration Release --verbosity normal
   fs_scan:
