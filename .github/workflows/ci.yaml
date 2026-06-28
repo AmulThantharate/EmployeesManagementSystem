@@ -220,4 +220,4 @@ jobs:
       - name: Docker Push
         run: |
           docker tag employees-management-system:${{ needs.initialize.outputs.tag }} ${{ secrets.DOCKERHUB_USERNAME }}/employees-management-system:${{ needs.initialize.outputs.tag }}
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/employees-management-system:${{ needs.initialize.outputs.tag }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/employees-management-system:${{ needs.initialize.outputs.tag }}
