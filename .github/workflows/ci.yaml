@@ -190,3 +190,34 @@ jobs:
         with:
           name: sbom
           path: sbom.spdx.json
+  docker_push:
+    name: Docker Image Push
+    runs-on: ubuntu-latest
+    needs:
+      [
+        "initialize",
+        "docker_build",
+        "trivy_image",
+        "grype_scan",
+        "generate_sbom",
+      ]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+      - name: Docker Load Image
+        run: docker load --input /tmp/image.tar
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Docker Push
+        run: |
+          docker tag employees-management-system:${{ needs.initialize.outputs.tag }} ${{ secrets.DOCKERHUB_USERNAME }}/employees-management-system:${{ needs.initialize.outputs.tag }}
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/employees-management-system:${{ needs.initialize.outputs.tag }}
