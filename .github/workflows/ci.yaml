@@ -11,10 +11,11 @@ jobs:
     name: initialize
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.meta.output.tag}}
+      tag: ${{ steps.meta.outputs.tag}}
     steps:
       - uses: actions/checkout@v4
       - name: Generate Tag
+        id: meta
         run: |
           TAG="v${GITHUB_RUN_NUMBER}-$(echo $GITHUB_SHA | cut -c1-7)"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
@@ -80,7 +81,7 @@ jobs:
   docker_build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: ["build", "unit_tests", "fs_scan"]
+    needs: ["initialize", "build", "unit_tests", "fs_scan"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -89,7 +90,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          tags: employees-management-system:local
+          tags: employees-management-system:${{ needs.initialize.outputs.tag }}
           outputs: type=docker,dest=/tmp/image.tar
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -99,7 +100,7 @@ jobs:
   smoke_test:
     name: Running Smoke Test
     runs-on: ubuntu-latest
-    needs: ["fs_scan", "docker_build"]
+    needs: ["initialize", "fs_scan", "docker_build"]
     steps:
       - uses: actions/checkout@v4
       - name: Download artifact
@@ -111,10 +112,10 @@ jobs:
         run: docker load --input /tmp/image.tar
       - name: Start Service
         env:
-          IMAGE_TAG: local
+          IMAGE_TAG: ${{ needs.initialize.outputs.tag }}
         run: |
           sed -i 's/build: ./# build: ./' docker-compose.yml
-          sed -i 's/image: employees-management-system:latest/image: employees-management-system:local/' docker-compose.yml
+          sed -i "s/image: employees-management-system:latest/image: employees-management-system:${IMAGE_TAG}/" docker-compose.yml
           docker compose up -d
       - name: Wait for services to be ready
         run: |
@@ -129,7 +130,7 @@ jobs:
         run: docker compose down -v
   trivy_image:
     name: Image Scan With Trivy
-    needs: smoke_test
+    needs: ["initialize", "smoke_test"]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
@@ -142,8 +143,50 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "employees-management-system:local"
+          image-ref: "employees-management-system:${{ needs.initialize.outputs.tag }}"
           format: "table"
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
+  grype_scan:
+    name: Grype Image Scan
+    needs: trivy_image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifcat
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/image.tar
+      - name: Docker Load Image
+        run: docker load --input /tmp/image.tar
+      - name: Run Grype scanner
+        uses: anchore/scan-action@v3
+        with:
+          image: "employees-management-system:${{ needs.initialize.outputs.tag }"
+          fail-build: false
+  generate_sbom:
+    name: Generate Sbom
+    needs: ["trivy_image", "grype_scan"]
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+      - name: Load image
+        run: docker load --input /tmp/image.tar
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: "employees-management-system:${{ needs.initialize.outputs.tag }"
+          format: spdx-json
+          output-file: sbom.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
