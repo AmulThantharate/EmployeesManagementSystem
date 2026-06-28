@@ -127,3 +127,23 @@ jobs:
       - name: Stop Service
         if: always()
         run: docker compose down -v
+  trivy_image:
+    name: Image Scan With Trivy
+    needs: smoke_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+      - name: Load Image
+        run: docker load --input /tmp/image.tar
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "employees-management-system:local"
+          format: "table"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
