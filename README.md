@@ -69,6 +69,8 @@ Before you begin, ensure you have the following installed:
 You can spin up the entire application along with the SQL Server database using Docker Compose:
 
 ```bash
+cp .env.example .env
+# Edit .env and replace the example value with a strong SQL Server password.
 docker-compose up --build
 ```
 
@@ -107,6 +109,34 @@ To execute all unit and integration tests across the entire solution:
 ```bash
 dotnet test EmployeesManagementSystem.slnx
 ```
+
+## Azure DevOps deployment
+
+`azure-pipelines.yml` is an Azure DevOps multi-stage pipeline for this application. It gates production deployment in this order:
+
+1. Restore, build, and execute the xUnit smoke/integration suite with coverage.
+2. Scan the repository with Trivy FS. HIGH and CRITICAL vulnerabilities, secrets, or misconfigurations fail the build.
+3. Submit the .NET analysis to SonarQube and wait up to five minutes for the SonarQube Quality Gate. A failed gate blocks deployment.
+4. Use Azure Container Registry Tasks to build and tag the Docker image.
+5. Deploy the immutable build tag to Azure App Service, then require `/` to return HTTP 200.
+
+### One-time Azure DevOps configuration
+
+1. Import this repository into Azure Repos or connect the GitHub repository, then create a YAML pipeline that points to `azure-pipelines.yml`.
+2. Install the **SonarQube** extension from the Azure DevOps Marketplace. In **Project settings → Service connections**, create a SonarQube connection named `SonarQube`. Create the `employees-management-system` project in SonarQube and configure its Quality Gate there.
+3. Create an Azure Resource Manager service connection with permission to build in the Azure Container Registry and update the target App Service. Its name becomes `azureServiceConnection` below.
+4. In **Pipelines → Library**, create a variable group named `employees-production`, authorize it for this pipeline, and add these variables:
+
+   | Variable | Secret? | Example |
+   | --- | --- | --- |
+   | `azureServiceConnection` | No | `sc-employees-production` |
+   | `acrName` | No | `myemployeesacr` |
+   | `appServiceName` | No | `employees-web-prod` |
+
+5. In Azure, configure the App Service once with `WEBSITES_PORT=8080` and its production `ConnectionStrings__DefaultConnection` value. The connection string must point to Azure SQL; never commit it to this repository. The App Service managed identity also needs the `AcrPull` role on the registry.
+6. Optionally require approval before deployment: open **Pipelines → Environments → employees-production → Approvals and checks** and add an approver. Pull requests validate but never deploy; only successful `main` or `master` builds deploy.
+
+The pipeline image tag is `$(Build.BuildId)`, making the deployed image traceable to the Azure DevOps run. To redeploy a previous version, run `AzureWebAppContainer@1` with the prior build number.
 
 ## 📊 Test Reports
 
