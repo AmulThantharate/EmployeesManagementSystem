@@ -8,7 +8,7 @@ pipeline {
         disableConcurrentBuilds()
     }
     
-    enviorment {
+    environment {
         SCANNER_HOME = tool 'sonar'
     }
 
