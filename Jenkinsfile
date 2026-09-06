@@ -18,11 +18,12 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/AmulThantharate/EmployeesManagementSystem.git'
             }
         }
-    }
+    
 
     stage("Check Dotnet version"){
         steps {
             sh 'dotnet --version'
         }
+    }
     }
 }
